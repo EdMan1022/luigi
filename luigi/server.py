@@ -59,6 +59,7 @@ class RPCHandler(tornado.web.RequestHandler):
     """
     Handle remote scheduling calls using rpc.RemoteSchedulerResponder.
     """
+    @tornado.web.authenticated
 
     def initialize(self, scheduler):
         self._scheduler = scheduler
@@ -82,7 +83,24 @@ class RPCHandler(tornado.web.RequestHandler):
     post = get
 
 
+class LoginHandler(tornado.web.RequestHandler):
+    """
+    Handles the user authentication process
+    """
+
+    def get(self):
+        self.write('<html><body><form action="/login" method="post">'
+                   'Name: <input type="text" name="name">'
+                   '<input type="submit" value="Sign in">'
+                   '</form></body></html>')
+
+    def post(self):
+        self.set_secure_cookie("user", self.get_argument("name"))
+        self.redirect("/")
+
+
 class BaseTaskHistoryHandler(tornado.web.RequestHandler):
+    @tornado.web.authenticated
     def initialize(self, scheduler):
         self._scheduler = scheduler
 
@@ -199,6 +217,7 @@ def app(scheduler):
         (r'/history', RecentRunHandler, {'scheduler': scheduler}),
         (r'/history/by_name/(.*?)', ByNameHandler, {'scheduler': scheduler}),
         (r'/history/by_id/(.*?)', ByIdHandler, {'scheduler': scheduler}),
+        (r'/login', LoginHandler),
         (r'/history/by_params/(.*?)', ByParamsHandler, {'scheduler': scheduler})
     ]
     api_app = tornado.web.Application(handlers, **settings)
